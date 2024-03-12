@@ -1,0 +1,18 @@
+name: Code Review with ollama
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+permissions: write-all
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Code Review
+        uses: tomisacat/ai_code_review@main
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          exclude: "yarn.lock,dist/**"
