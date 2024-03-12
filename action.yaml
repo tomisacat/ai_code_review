@@ -1,4 +1,4 @@
-name: "AI Code Review Action"
+name: "Codellama Review"
 description: "Perform code reviews and comment on diffs using codellama."
 inputs:
   GITHUB_TOKEN:
