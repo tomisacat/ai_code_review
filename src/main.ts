@@ -116,6 +116,9 @@ async function getAIResponse(prompt: string): Promise<Array<{
       prompt: prompt,
     })
 
+    // nonsense console.log
+    console.log("test")
+
     return JSON.parse(res.response).reviews;
   } catch (error) {
     console.error("Error:", error);
