@@ -4,6 +4,9 @@ inputs:
   GITHUB_TOKEN:
     description: "GitHub token to interact with the repository."
     required: true
+  OLLAMA_ADDRESS:
+    description: "The address of your self deployed ollama service."
+    required: true
   LLM_MODEL:
     description: "ollama model."
     required: false

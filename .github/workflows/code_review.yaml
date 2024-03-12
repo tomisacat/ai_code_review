@@ -15,4 +15,5 @@ jobs:
         uses: tomisacat/ai_code_review@main
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OLLAMA_ADDRESS: ${{ secrets.OLLAMA_ADDRESS }}
           exclude: "yarn.lock,dist/**"
