@@ -66,7 +66,7 @@ async function analyzeCode(
       if (aiResponse) {
         const newComments = createComment(file, chunk, aiResponse);
         if (newComments) {
-          comments.push(...newComments);
+          comments.push(newComments);
         }
       }
     }
@@ -76,8 +76,6 @@ async function analyzeCode(
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `Your task is to review pull requests. Instructions:
-- Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
-- Do not provide other content with the JSON format response, the only response is the JSON.
 - Do not give positive comments or compliments.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
 - Write the comment in GitHub Markdown format.
@@ -107,17 +105,14 @@ ${chunk.changes
 `;
 }
 
-async function getAIResponse(prompt: string): Promise<Array<{
-  lineNumber: string;
-  reviewComment: string;
-}> | null> {
+async function getAIResponse(prompt: string): Promise<string | null> {
   try {
     const res = await ollama.generate({
       model: LLM_MODEL,
       prompt: prompt,
     })
-    console.log(res.response)
-    return JSON.parse(res.response).reviews;
+    
+    return res.response
   } catch (error) {
     console.error("Error:", error);
     return null;
@@ -127,24 +122,20 @@ async function getAIResponse(prompt: string): Promise<Array<{
 function createComment(
   file: File,
   chunk: Chunk,
-  aiResponses: Array<{
-    lineNumber: string;
-    reviewComment: string;
-  }>
-): Array<{ body: string; path: string; start_line: number, line: number }> {
-  return aiResponses.flatMap((aiResponse) => {
-    if (!file.to) {
-      return [];
-    }
-    let start = Math.min(chunk.oldStart, chunk.newStart, chunk.oldLines, chunk.newLines);
-    let end = Math.max(chunk.oldStart + chunk.oldLines, chunk.newStart + chunk.newLines);
-    return {
-      body: aiResponse.reviewComment,
-      path: file.to,
-      start_line: start,
-      line: end
-    };
-  });
+  aiResponses: string
+): { body: string; path: string; start_line: number, line: number } | null {
+  if (!file.to) {
+    return null;
+  }
+
+  let start = Math.min(chunk.oldStart, chunk.newStart, chunk.oldLines, chunk.newLines);
+  let end = Math.max(chunk.oldStart + chunk.oldLines, chunk.newStart + chunk.newLines);
+  return {
+    body: aiResponses,
+    path: file.to,
+    start_line: start,
+    line: end
+  };
 }
 
 async function createReviewComment(
