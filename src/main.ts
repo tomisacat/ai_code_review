@@ -116,7 +116,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
       model: LLM_MODEL,
       prompt: prompt,
     })
-
+    console.log(res.response)
     return JSON.parse(res.response).reviews;
   } catch (error) {
     console.error("Error:", error);
