@@ -5,9 +5,6 @@ import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import { minimatch } from "minimatch";
 
-// nonsense print
-console.log('dfdds')
-
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OLLAMA_ADDRESS: string = core.getInput("OLLAMA_ADDRESS");
 const LLM_MODEL: string = core.getInput("LLM_MODEL");
@@ -21,6 +18,9 @@ interface PRDetails {
   title: string;
   description: string;
 }
+
+// nonsense print
+console.log('dfdds')
 
 async function getPRDetails(): Promise<PRDetails> {
   const { repository, number } = JSON.parse(
