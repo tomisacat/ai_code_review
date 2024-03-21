@@ -12,7 +12,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Code Review
-        uses: tomisacat/ai_code_review@main
+        uses: tomisacat/ai_code_review@chunk-support
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OLLAMA_ADDRESS: ${{ secrets.OLLAMA_ADDRESS }}

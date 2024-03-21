@@ -19,6 +19,9 @@ interface PRDetails {
   description: string;
 }
 
+// nonsense print
+console.log('dfdds')
+
 async function getPRDetails(): Promise<PRDetails> {
   const { repository, number } = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
@@ -55,8 +58,8 @@ async function getDiff(
 async function analyzeCode(
   parsedDiff: File[],
   prDetails: PRDetails
-): Promise<Array<{ body: string; path: string; line: number }>> {
-  const comments: Array<{ body: string; path: string; line: number }> = [];
+): Promise<Array<{ body: string; path: string; start_line: number, line: number }>> {
+  const comments: Array<{ body: string; path: string; start_line: number, line: number }> = [];
 
   for (const file of parsedDiff) {
     if (file.to === "/dev/null") continue; // Ignore deleted files
@@ -66,7 +69,7 @@ async function analyzeCode(
       if (aiResponse) {
         const newComments = createComment(file, chunk, aiResponse);
         if (newComments) {
-          comments.push(...newComments);
+          comments.push(newComments);
         }
       }
     }
@@ -76,7 +79,6 @@ async function analyzeCode(
 
 function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
   return `Your task is to review pull requests. Instructions:
-- Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
 - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
 - Write the comment in GitHub Markdown format.
@@ -106,17 +108,14 @@ ${chunk.changes
 `;
 }
 
-async function getAIResponse(prompt: string): Promise<Array<{
-  lineNumber: string;
-  reviewComment: string;
-}> | null> {
+async function getAIResponse(prompt: string): Promise<string | null> {
   try {
     const res = await ollama.generate({
       model: LLM_MODEL,
       prompt: prompt,
     })
-
-    return JSON.parse(res.response).reviews;
+    
+    return res.response
   } catch (error) {
     console.error("Error:", error);
     return null;
@@ -126,28 +125,27 @@ async function getAIResponse(prompt: string): Promise<Array<{
 function createComment(
   file: File,
   chunk: Chunk,
-  aiResponses: Array<{
-    lineNumber: string;
-    reviewComment: string;
-  }>
-): Array<{ body: string; path: string; line: number }> {
-  return aiResponses.flatMap((aiResponse) => {
-    if (!file.to) {
-      return [];
-    }
-    return {
-      body: aiResponse.reviewComment,
-      path: file.to,
-      line: Number(aiResponse.lineNumber),
-    };
-  });
+  aiResponses: string
+): { body: string; path: string; start_line: number, line: number } | null {
+  if (!file.to) {
+    return null;
+  }
+
+  let start = Math.min(chunk.oldStart, chunk.newStart, chunk.oldLines, chunk.newLines);
+  let end = Math.max(chunk.oldStart + chunk.oldLines, chunk.newStart + chunk.newLines);
+  return {
+    body: aiResponses,
+    path: file.to,
+    start_line: start,
+    line: end
+  };
 }
 
 async function createReviewComment(
   owner: string,
   repo: string,
   pull_number: number,
-  comments: Array<{ body: string; path: string; line: number }>
+  comments: Array<{ body: string; path: string; start_line: number, line: number }>
 ): Promise<void> {
   await octokit.pulls.createReview({
     owner,
